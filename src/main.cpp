@@ -16,7 +16,7 @@
 */
 
 //////////////////////////////////////////////
-//        RemoteXY include library          //
+//        include libraries                 //
 //////////////////////////////////////////////
 
 // RemoteXY select connection mode and include library
@@ -27,30 +27,31 @@
 #include <Arduino.h>
 
 // RemoteXY connection settings
-#define REMOTEXY_BLUETOOTH_NAME "Scoot_Free"
+#define REMOTEXY_BLUETOOTH_NAME "Scooter Rebellion"
 
 
 // RemoteXY configurate
 #pragma pack(push, 1)
 uint8_t RemoteXY_CONF[] =
-  { 255,3,0,2,0,64,0,8,13,1,
-  2,1,20,82,22,11,2,26,31,31,
-  79,78,0,79,70,70,0,7,52,21,
-  61,20,5,2,26,2,65,4,16,37,
-  9,9,65,1,37,37,9,9,129,0,
-  9,19,49,6,17,83,99,111,111,116,
-  101,114,32,70,114,101,101,100,111,109,
-  0 };
+  { 255,2,0,3,0,65,0,8,216,1,
+  2,1,30,19,22,11,233,26,31,31,
+  79,78,0,79,70,70,0,65,4,10,
+  20,9,9,65,3,10,44,9,9,3,
+  131,30,44,22,8,232,26,129,0,6,
+  73,52,6,205,83,99,111,111,116,101,
+  114,32,82,101,98,101,108,108,105,111,
+  110,0 };
 
 // this structure defines all the variables of your control interface
 struct {
 
     // input variable
   uint8_t switch_1; // =1 if switch ON and =0 if OFF
-  int16_t edit_1;  // −32767.. +32767
+  uint8_t select_1; // =0 if select position A, =1 if position B, =2 if position C, ...
 
     // output variable
   uint8_t led_1_r; // =0..255 LED Red brightness
+  uint8_t led_2_g; // =0..255 LED Green brightness
   uint8_t led_2_b; // =0..255 LED Blue brightness
 
     // other variable
@@ -72,13 +73,12 @@ struct {
 unsigned long start_time = 0;
 int run_once = 0;
 
-byte messageOff[] = {0xA6, 0x12, 0x02, 0x10, 0x14, 0xCF}; //If the scooter is on turn it off.
-//byte messageB[] = {0xA6, 0x12, 0x02, 0x11, 0x14, 0x0B}; //Not sure what this does?
-//byte messageStart[] = {0xA6, 0x12, 0x02, 0x15, 0x14, 0x30}; //This is the unlock code.
+//byte messageOff[] = {0xA6, 0x12, 0x02, 0x10, 0x14, 0xCF}; //If the scooter is on turn it off.
+byte messageOff = 0x10;
 byte messageStart = 0xFF;
-/*byte lightOn = 0xFD;
-byte lightflashing = 0xFF;
-byte lightOFF = 0;*/
+byte lightOn = 0xFD;
+byte lightFlashing = 0xFF;
+byte lightOff = 0xFF; //Still need to figure out headlight off.
 
 ////////////////////////////////////////////
 //         Scooter Command include        //
@@ -92,6 +92,14 @@ byte commandbyteOld = 0; // last incoming BLE data
 uint8_t buf[] = {0xA6, 0x12, 0x02, 0x00, 0x14, 0x00};
 #define BUFSIZE 5
 
+void commandSent(byte i)
+{
+  buf[3] = i;
+  crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
+  buf[5] = crc;
+  //Serial1.write(buf, sizeof(buf));
+}
+
 void setup()
 {
   RemoteXY_Init ();
@@ -101,13 +109,16 @@ void setup()
 
   pinMode (PIN_SWITCH_1, OUTPUT);
 
-  buf[3] = messageStart;
+  commandSent(messageStart);
+  /*buf[3] = messageStart;
   crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
-  buf[5] = crc;
+  buf[5] = crc;*/
 
-  Serial1.write(messageOff, sizeof(messageOff));
+  //Serial1.write(messageOff, sizeof(messageOff));
+  commandSent(messageOff);
   delay(500);
-  Serial1.write(buf, sizeof(buf));
+  commandSent(messageStart);
+  //Serial1.write(buf, sizeof(buf));
 
 }
 
@@ -128,30 +139,43 @@ void loop()
     else{
       RemoteXY.led_1_r = 0;
       if (run_once == 0){
-      Serial1.write(messageOff, sizeof(messageOff));
+        commandSent(messageOff);
+      Serial1.write(buf, sizeof(buf));
       run_once = 1;
       }
     }
    Serial.print(RemoteXY.switch_1);
    Serial.print(" ");
-   Serial.print(RemoteXY.led_1_r);
+   Serial.print(RemoteXY.select_1);
    Serial.print(" ");
+    Serial.print(buf[3]);
    Serial.println(RemoteXY.connect_flag);
 
-   if(RemoteXY.connect_flag == 1){ //BLE connection indication for the smartphone;
-     RemoteXY.led_2_b = 255;
-    }
-    else{
+   switch(RemoteXY.select_1){ //Headlight switch and indicator.
+    case 0:
+     RemoteXY.led_2_b = 0;
+     RemoteXY.led_2_g = 0;
+     commandSent(lightOff);
+     break;
+    case 1:
+      RemoteXY.led_2_b = 255;
+      RemoteXY.led_2_g = 0;
+      commandSent(lightOn);
+      break;
+    case 2:
       RemoteXY.led_2_b = 0;
+      RemoteXY.led_2_g = 255;
+      commandSent(lightFlashing);
+      break;
     }
 
-   commandByte = RemoteXY.edit_1;  //
+   /*commandByte = RemoteXY.edit_1;  //
      if (commandByte != commandbyteOld)
      {
       buf[3] = commandByte;
       crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
       buf[5] = crc;
       commandbyteOld = commandByte;
-     }
+    }*/
 
 }
