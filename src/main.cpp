@@ -78,7 +78,7 @@ byte messageOff = 0x10;
 byte messageStart = 0xFF;
 byte lightOn = 0xFD;
 byte lightFlashing = 0xFF;
-byte lightOff = 0xFF; //Still need to figure out headlight off.
+byte lightOff = 0xF9; //Still need to figure out headlight off.
 
 ////////////////////////////////////////////
 //         Scooter Command include        //
