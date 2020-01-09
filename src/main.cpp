@@ -23,12 +23,11 @@
 #define REMOTEXY_MODE__ESP32CORE_BLE
 
 #include <RemoteXY.h>
-#include <FastCRC.h>
+#include "FastCRC.h"
 #include <Arduino.h>
 
 // RemoteXY connection settings
 #define REMOTEXY_BLUETOOTH_NAME "Scooter Rebellion"
-
 
 // RemoteXY configurate
 #pragma pack(push, 1)
@@ -73,12 +72,12 @@ struct {
 unsigned long start_time = 0;
 int run_once = 0;
 
-//byte messageOff[] = {0xA6, 0x12, 0x02, 0x10, 0x14, 0xCF}; //If the scooter is on turn it off.
+//byte messageTest[] = {0xA6, 0x12, 0x02, 0x85, 0x24, 0x4D}; // CHANGE LOOP TO MODIFY AND TEST
 byte messageOff = 0x10;
-byte messageStart = 0xFF;
-byte lightOn = 0xFD;
-byte lightFlashing = 0xFF;
-byte lightOff = 0xF9; //Still need to figure out headlight off.
+byte messageStart = 0x15;
+byte lightOn = 0x05;
+byte lightFlashing = 0x27;
+byte lightOff = 0x01; //Still need to figure out headlight off.
 
 ////////////////////////////////////////////
 //         Scooter Command include        //
@@ -86,19 +85,26 @@ byte lightOff = 0xF9; //Still need to figure out headlight off.
 FastCRC8 CRC8; //Checksum Library
 uint32_t crc;
 
-byte commandByte = 0; // for incoming BLE data
+//byte commandByte = 0; // for incoming BLE data
 byte commandbyteOld = 0; // last incoming BLE data
 
-uint8_t buf[] = {0xA6, 0x12, 0x02, 0x00, 0x14, 0x00};
+uint8_t buf[] = {0xA6, 0x12, 0x02, 0x00, 0x24, 0x00};
+
 #define BUFSIZE 5
 
-void commandSent(byte i)
+void commandSent(byte commandByte)
 {
-  buf[3] = i;
-  crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
-  buf[5] = crc;
-  //Serial1.write(buf, sizeof(buf));
+    if (commandByte != commandbyteOld)
+    {
+     buf[3] = commandByte;
+     crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
+     buf[5] = crc;
+     commandbyteOld = commandByte;
+     Serial.println("CRC calculated");
+     delay(500);
+   }
 }
+
 
 void setup()
 {
@@ -109,16 +115,9 @@ void setup()
 
   pinMode (PIN_SWITCH_1, OUTPUT);
 
-  commandSent(messageStart);
-  /*buf[3] = messageStart;
-  crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
-  buf[5] = crc;*/
-
-  //Serial1.write(messageOff, sizeof(messageOff));
   commandSent(messageOff);
   delay(500);
   commandSent(messageStart);
-  //Serial1.write(buf, sizeof(buf));
 
 }
 
@@ -139,7 +138,7 @@ void loop()
     else{
       RemoteXY.led_1_r = 0;
       if (run_once == 0){
-        commandSent(messageOff);
+      commandSent(messageOff);
       Serial1.write(buf, sizeof(buf));
       run_once = 1;
       }
@@ -148,10 +147,11 @@ void loop()
    Serial.print(" ");
    Serial.print(RemoteXY.select_1);
    Serial.print(" ");
-    Serial.print(buf[3]);
+   Serial.print(buf[3], HEX);
+   Serial.print(" ");
    Serial.println(RemoteXY.connect_flag);
 
-   switch(RemoteXY.select_1){ //Headlight switch and indicator.
+   switch(RemoteXY.select_1){ //Headlight switch and indicator
     case 0:
      RemoteXY.led_2_b = 0;
      RemoteXY.led_2_g = 0;
@@ -168,14 +168,4 @@ void loop()
       commandSent(lightFlashing);
       break;
     }
-
-   /*commandByte = RemoteXY.edit_1;  //
-     if (commandByte != commandbyteOld)
-     {
-      buf[3] = commandByte;
-      crc = CRC8.maxim(buf, BUFSIZE); //CRC-8 MAXIM Check Sum Calculator
-      buf[5] = crc;
-      commandbyteOld = commandByte;
-    }*/
-
 }
