@@ -22,7 +22,7 @@
 // RemoteXY select connection mode and include library
 #define REMOTEXY_MODE__ESP32CORE_BLE
 
-#include <RemoteXY.h>
+#include "RemoteXY.h"
 #include "FastCRC.h"
 #include <Arduino.h>
 
