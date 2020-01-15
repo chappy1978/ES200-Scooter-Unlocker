@@ -31,6 +31,7 @@
 
 // RemoteXY configurate
 #pragma pack(push, 1)
+
 uint8_t RemoteXY_CONF[] =
   { 255,2,0,3,0,65,0,8,216,1,
   2,1,30,19,22,11,233,26,31,31,
@@ -75,9 +76,9 @@ int run_once = 0;
 //byte messageTest[] = {0xA6, 0x12, 0x02, 0x85, 0x24, 0x4D}; // CHANGE LOOP TO MODIFY AND TEST
 byte messageOff = 0x10;
 byte messageStart = 0x15;
-byte lightOn = 0x05;
-byte lightFlashing = 0x27;
-byte lightOff = 0x01; //Still need to figure out headlight off.
+byte lightOn = 0xE5;
+byte lightFlashing = 0xE3;
+byte lightOff = 0xE1; //Still need to figure out headlight off.
 
 ////////////////////////////////////////////
 //         Scooter Command include        //
@@ -88,7 +89,7 @@ uint32_t crc;
 //byte commandByte = 0; // for incoming BLE data
 byte commandbyteOld = 0; // last incoming BLE data
 
-uint8_t buf[] = {0xA6, 0x12, 0x02, 0x00, 0x24, 0x00};
+uint8_t buf[] = {0xA6, 0x12, 0x02, 0x00, 0xE4, 0x00};
 
 #define BUFSIZE 5
 
