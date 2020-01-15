@@ -55,7 +55,7 @@ struct {
   uint8_t led_2_b; // =0..255 LED Blue brightness
 
     // other variable
-  uint8_t connect_flag;  // =1 if wire connected, else =0
+  uint8_t connect_flag;  // =1 if Bluetooth is connected, else =0
 
 } RemoteXY;
 #pragma pack(pop)
@@ -73,12 +73,11 @@ struct {
 unsigned long start_time = 0;
 int run_once = 0;
 
-//byte messageTest[] = {0xA6, 0x12, 0x02, 0x85, 0x24, 0x4D}; // CHANGE LOOP TO MODIFY AND TEST
 byte messageOff = 0x10;
 byte messageStart = 0x15;
 byte lightOn = 0xE5;
 byte lightFlashing = 0xE3;
-byte lightOff = 0xE1; //Still need to figure out headlight off.
+byte lightOff = 0xE1;
 
 ////////////////////////////////////////////
 //         Scooter Command include        //
@@ -102,7 +101,7 @@ void commandSent(byte commandByte)
      buf[5] = crc;
      commandbyteOld = commandByte;
      Serial.println("CRC calculated");
-     delay(500);
+     //delay(500);
    }
 }
 
@@ -129,6 +128,25 @@ void loop()
   digitalWrite(PIN_SWITCH_1, (RemoteXY.switch_1==0)?LOW:HIGH);
 
    if(RemoteXY.switch_1 == 1){
+
+     switch(RemoteXY.select_1){ //Headlight switch and indicator
+      case 0:
+       RemoteXY.led_2_b = 0;
+       RemoteXY.led_2_g = 0;
+       commandSent(lightOff);
+       break;
+      case 1:
+        RemoteXY.led_2_b = 255;
+        RemoteXY.led_2_g = 0;
+        commandSent(lightOn);
+        break;
+      case 2:
+        RemoteXY.led_2_b = 0;
+        RemoteXY.led_2_g = 255;
+        commandSent(lightFlashing);
+        break;
+      }
+
     if(millis() > start_time + INTERVAL){
         start_time = millis();
         Serial1.write(buf, sizeof(buf));
@@ -144,29 +162,11 @@ void loop()
       run_once = 1;
       }
     }
-   Serial.print(RemoteXY.switch_1);
+   /*Serial.print(RemoteXY.switch_1);
    Serial.print(" ");
    Serial.print(RemoteXY.select_1);
-   Serial.print(" ");
+   Serial.print(" ");*/
    Serial.print(buf[3], HEX);
    Serial.print(" ");
    Serial.println(RemoteXY.connect_flag);
-
-   switch(RemoteXY.select_1){ //Headlight switch and indicator
-    case 0:
-     RemoteXY.led_2_b = 0;
-     RemoteXY.led_2_g = 0;
-     commandSent(lightOff);
-     break;
-    case 1:
-      RemoteXY.led_2_b = 255;
-      RemoteXY.led_2_g = 0;
-      commandSent(lightOn);
-      break;
-    case 2:
-      RemoteXY.led_2_b = 0;
-      RemoteXY.led_2_g = 255;
-      commandSent(lightFlashing);
-      break;
-    }
 }
