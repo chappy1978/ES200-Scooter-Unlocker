@@ -117,6 +117,7 @@ void setup()
   commandSent(messageOff);
   delay(500);
   commandSent(messageStart);
+  delay(500);
   digitalWrite(PIN_SWITCH_1, (RemoteXY.switch_1==0)?LOW:HIGH); //This line had been in the loop() moved it here for noise.
 
 }
