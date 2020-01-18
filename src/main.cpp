@@ -101,7 +101,6 @@ void commandSent(byte commandByte)
      buf[5] = crc;
      commandbyteOld = commandByte;
      Serial.println("CRC calculated");
-     //delay(500);
    }
 }
 
@@ -118,6 +117,7 @@ void setup()
   commandSent(messageOff);
   delay(500);
   commandSent(messageStart);
+  digitalWrite(PIN_SWITCH_1, (RemoteXY.switch_1==0)?LOW:HIGH); //This line had been in the loop() moved it here for noise.
 
 }
 
@@ -125,7 +125,7 @@ void loop()
 {
   RemoteXY_Handler ();
 
-  digitalWrite(PIN_SWITCH_1, (RemoteXY.switch_1==0)?LOW:HIGH);
+
 
    if(RemoteXY.switch_1 == 1){
 
